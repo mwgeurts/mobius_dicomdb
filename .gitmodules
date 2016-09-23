@@ -1,0 +1,3 @@
+[submodule "mobius_query"]
+	path = mobius_query
+	url = https://github.com/mwgeurts/mobius_query
