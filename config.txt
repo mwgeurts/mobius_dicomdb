@@ -1,0 +1,6 @@
+SQLITE3_DATABASE    =   database.db
+MOBIUS_SERVER       =	10.105.1.12
+MOBIUS_USER         =	admin
+MOBIUS_PASS         =	admin
+QA_PREFIX	    =	ZZ
+
