@@ -16,7 +16,7 @@ rxdose float,
 fractions float,
 doseperfx float,
 position varchar(16),
-doseuids blob,
+sopinst blob,
 dicomfiles blob
 );
 
