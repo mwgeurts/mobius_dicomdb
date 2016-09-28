@@ -1,3 +1,6 @@
 [submodule "mobius_query"]
 	path = mobius_query
 	url = https://github.com/mwgeurts/mobius_query
+[submodule "dicom_tools"]
+	path = dicom_tools
+	url = https://github.com/mwgeurts/dicom_tools
