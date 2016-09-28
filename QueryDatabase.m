@@ -79,7 +79,11 @@ if strcmp(sql(1:6), 'SELECT')
     for i = 1:length(cols)
         
         % Store data
-        data.(cols{i}) = cursor.Data(:,i);
+        if ~strcmp(cursor.Data{1}, 'No Data')
+            data.(cols{i}) = cursor.Data(:,i);
+        else
+            data.(cols{i}) = [];
+        end
     end
     
     % Log conclusion
