@@ -57,8 +57,8 @@ l = length(list);
 for i = 1:l
 
     % If name starts/ends with 'ZZ' or 'UWQA' (QA patient)
-    if ~isempty(strfind(lower(list{i}.patient_name), 'zz'))) || ...
-            ~isempty(strfind(lower(list{i}.patient_name), 'uwqa')))
+    if ~isempty(strfind(lower(list{i}.patient_name), 'zz')) || ...
+            ~isempty(strfind(lower(list{i}.patient_name), 'uwqa'))
         
         % Log event
         Event(['Skipping QA patient ', list{i}.patient_name]);
