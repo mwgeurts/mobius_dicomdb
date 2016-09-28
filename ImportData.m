@@ -75,6 +75,10 @@ for i = 1:l
     % Reset download RT plan cell array
     json = cell(0);
     
+    % Get RTPLAN SOP instance UIDs
+    [session, ~, ~, ~, list{i}.rtplan] = GetPlanSOPs('server', server, ...
+        'session', session, 'patient_id', list{i}.patient_id);
+    
     % Loop through RT PLANS
     for j = 1:length(list{i}.rtplan)
         
@@ -237,7 +241,10 @@ for i = 1:l
             for k = 1:length(rtplans)
                 
                 % If RT Dose references this plan
-                if strcmp(rtplans{k}.SOPInstanceUID, ...
+                if isfield(d, 'ReferencedRTPlanSequence') && ...
+                        isfield(d.ReferencedRTPlanSequence.Item_1, ...
+                        'ReferencedSOPInstanceUID') && ...
+                        strcmp(rtplans{k}.SOPInstanceUID, ...
                         d.ReferencedRTPlanSequence.Item_1...
                         .ReferencedSOPInstanceUID)
 
@@ -269,7 +276,10 @@ for i = 1:l
             for k = 1:length(rtplans)
                 
                 % If RT plan references this structure set
-                if strcmp(rtplans{k}.ReferencedStructureSetSequence.Item_1...
+                if isfield(rtplans{k}, 'ReferencedStructureSetSequence') && ...
+                        isfield(rtplans{k}.ReferencedStructureSetSequence.Item_1...
+                        , 'ReferencedSOPInstanceUID') && ...
+                        strcmp(rtplans{k}.ReferencedStructureSetSequence.Item_1...
                         .ReferencedSOPInstanceUID, d.SOPInstanceUID)
                     
                     % Copy structure set into plan folder
@@ -291,7 +301,7 @@ for i = 1:l
     for j = 1:length(dicom{1}.files)
         
         % If the file is a CT
-        if ~isempty(regexpi(dicom{1}.files{j}, 'CT'))
+        if ~isempty(regexpi(dicom{1}.files{j}, '^CT'))
 
             % Log event
             Event(['Loading CT image ', dicom{1}.files{j}]);
