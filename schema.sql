@@ -1,23 +1,21 @@
 CREATE TABLE patients (
-uid varchar(255) primary key,
+sopinst varchar(255) primary key,
 importdate float,
 id varchar(255),
 name varchar(255),
 birthdate float,
-sex varchar(16),
+sex varchar(8),
 plan varchar(255),
 plandate float,
-machine varchar(16),
-tps varchar(16),
-version varchar(16),
-type varchar(16),
-mode varchar(16),
+machine varchar(32),
+tps varchar(32),
+version varchar(32),
+type varchar(32),
+mode varchar(32),
 rxdose float,
 fractions float,
 doseperfx float,
-position varchar(16),
-sopinst blob,
-dicomfiles blob
+position varchar(8)
 );
 
 .save database.db
