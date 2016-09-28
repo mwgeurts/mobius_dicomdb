@@ -22,7 +22,7 @@ function varargout = DatabaseUI(varargin)
 
 % Edit the above text to modify the response to help DatabaseUI
 
-% Last Modified by GUIDE v2.5 23-Sep-2016 16:50:02
+% Last Modified by GUIDE v2.5 28-Sep-2016 12:38:12
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,6 +58,7 @@ warning('off', 'all');
 % Choose default command line output for DatabaseUI
 handles.output = hObject;
 
+%% Set Version Info
 % Set version handle
 handles.version = '0.9';
 set(handles.version_text, 'String', ['Version ', handles.version]);
@@ -75,6 +76,7 @@ clear path;
 % Set version information.  See LoadVersionInfo for more details.
 handles.versionInfo = LoadVersionInfo;
 
+%% Initialize Event Log
 % Store program and MATLAB/etc version information as a string cell array
 string = {'Mobius Anonymized DICOM Database'
     sprintf('Version: %s (%s)', handles.version, handles.versionInfo{6});
@@ -96,18 +98,43 @@ clear separator;
 % Log information
 Event(string, 'INIT');
 
+%% Load Submodules
 % Add mobius_query submodule to search path
 addpath('./mobius_query');
 
-% Check if MATLAB can find CalcGamma
+% Check if MATLAB can find EstablishConnection
 if exist('EstablishConnection', 'file') ~= 2
     
     % If not, throw an error
-    Event(['The mobius_query submodule does not exist in the search path. Use ', ...
-        'git clone --recursive or git submodule init followed by git ', ...
+    Event(['The mobius_query submodule does not exist in the search path. ', ...
+        'Use git clone --recursive or git submodule init followed by git ', ...
         'submodule update to fetch all submodules'], 'ERROR');
 end
 
+% Add jsonlab folder to search path
+addpath('./mobius_query/jsonlab');
+
+% Check if MATLAB can find loadjson
+if exist('loadjson', 'file') ~= 2
+    
+    % If not, throw an error
+    Event(['The mobius_query/jsonlab/ submodule is missing. Download it ', ...
+        'from the MathWorks.com website'], 'ERROR');
+end
+
+% Add dicom_tools submodule to search path
+addpath('./dicom_tools');
+
+% Check if MATLAB can find LoadJSONPlan
+if exist('LoadJSONPlan', 'file') ~= 2
+    
+    % If not, throw an error
+    Event(['The dicom_tools submodule does not exist in the search path. ', ...
+        'Use git clone --recursive or git submodule init followed by git ', ...
+        'submodule update to fetch all submodules'], 'ERROR');
+end
+
+%% Load Configuration File
 % Open file handle to config.txt file
 fid = fopen('config.txt', 'r');
 
@@ -137,6 +164,7 @@ clear c i fid;
 % Log completion
 Event('Loaded config.txt parameters');
 
+%% Load Database
 % Log database load
 Event('Initializing database');
 
@@ -146,22 +174,13 @@ handles.database = LoadDatabase(handles.config.SQLITE3_DATABASE);
 % Log database load
 Event('Querying database contents');
 
-% Query the database for all patients
-table = QueryDatabase(handles.database, ['SELECT uid, plan, plandate, ', ...
-    'machine, tps, version, type, mode, rxdose, fractions, doseperfx, ', ...
-    'position FROM patients ORDER BY plan ASC']);
+% Update table
+handles = updateTable(handles);
 
-% Define table
-set(handles.uitable1, 'ColumnName', {'Plan', 'Plan Date', 'Position', ...
-    'Machine', 'TPS', 'Version', 'Type', 'Mode', 'Rx Dose', 'Fractions', ...
-    'Dose/Fx'});
-set(handles.uitable1, 'ColumnEditable', logical(zeros(1, ...
-    length(get(handles.uitable1, 'ColumnName'))))); %#ok<LOGL>
-
-% Update table contents
-set(handles.uitable1, 'Data', horzcat(table.plan, table.plandate, ...
-    table.position, table.machine, table.tps, table.version, table.type, ...
-    table.mode, table.rxdose, table.fractions, table.doseperfx));
+% Disable uncompleted components
+set(handles.export_button, 'Enable', 'off');
+set(handles.delete_button, 'Enable', 'off');
+set(handles.xls_button, 'Enable', 'off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -177,12 +196,44 @@ function varargout = DatabaseUI_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function import_button_Callback(hObject, eventdata, handles)
+function import_button_Callback(hObject, ~, handles)
 % hObject    handle to import_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('User selected to import new archives');
+Event('Prompting for server information');
 
+% Open a ui prompt to ask for Mobius3D server
+input = inputdlg({'Enter Mobius3D server to query:', 'Enter username:', ...
+    'Enter Password:'}, 'Mobius3D Inputs', [1 30], ...
+    {handles.config.MOBIUS_SERVER, handles.config.MOBIUS_USER, ...
+    handles.config.MOBIUS_PASS});
+
+% Log event
+Event('Establishing connection to server');
+
+% Establish connection to server
+handles.session = EstablishConnection('server', input{1}, 'user', input{2}, ...
+    'pass', input{3});
+
+% Execute ImportData
+[handles.session, handles.database] = ImportData('server', input{1}, ...
+    'session', handles.session, 'database', handles.database, 'directory', ...
+    handles.config.DICOM_FOLDER);
+
+% Log event
+Event('Updating graphical interface');
+
+% Update table
+handles = updateTable(handles);
+
+% Clear temporary variables
+clear input;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function export_button_Callback(hObject, eventdata, handles)
@@ -219,3 +270,50 @@ close(handles.database);
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function handles = updateTable(handles)
+% updateTable updates the graphical user interface table
+
+% Query the database for all patients
+[handles.database, handles.table] = QueryDatabase(handles.database, ...
+    ['SELECT sopinst, plan, plandate, machine, tps, version, type, mode, ', ...
+    'position, rxdose, fractions, id, name, doseperfx FROM patients ', ...
+    'ORDER BY id DESC']);
+
+% Define table
+set(handles.uitable1, 'ColumnName', {'ID', 'Name', 'Plan', 'Plan Date', ...
+    'Position', 'Machine', 'TPS', 'Version', 'Type', 'Mode', 'Dose', ...
+    'Fractions', 'Dose/Fx', 'Export'});
+set(handles.uitable1, 'ColumnEditable', logical(horzcat(zeros(1, ...
+    length(get(handles.uitable1, 'ColumnName'))-1), 1)));
+set(handles.uitable1, 'ColumnFormat', horzcat(cell(1, ...
+    length(get(handles.uitable1, 'ColumnName'))-1), 'Logical'));
+
+% Format dates
+for i = 1:length(handles.table.plandate)
+    handles.table.plandate{i} = datestr(handles.table.plandate{i});
+end
+
+% Format doses/fractions
+for i = 1:length(handles.table.rxdose)
+    handles.table.fractions{i} = sprintf('%i', handles.table.fractions{i});
+    
+    if handles.table.rxdose{i} == 0
+        handles.table.rxdose{i} = '';
+        handles.table.doseperfx{i} = '';
+    else
+        handles.table.rxdose{i} = ...
+            sprintf('%0.1f Gy', handles.table.rxdose{i});
+        handles.table.doseperfx{i} = ...
+            sprintf('%0.1f Gy', handles.table.doseperfx{i});
+    end
+end
+
+% Update table contents
+set(handles.uitable1, 'Data', horzcat(handles.table.id, handles.table.name, ...
+    handles.table.plan, handles.table.plandate, handles.table.position, ...
+    handles.table.machine, handles.table.tps, handles.table.version, ...
+    handles.table.type, handles.table.mode, handles.table.rxdose, ...
+    handles.table.fractions, handles.table.doseperfx, cell(...
+    length(handles.table.id), 1)));
