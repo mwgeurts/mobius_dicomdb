@@ -185,12 +185,14 @@ set(handles.sort_menu, 'String', c(1:end-2));
 % Clear temporary variables
 clear c;
 
+% Clear filter
+set(handles.filter_text, 'String', '');
+set(handles.filter_check, 'Value', 0);
+
 % Disable uncompleted components
 set(handles.export_button, 'Enable', 'off');
 set(handles.delete_button, 'Enable', 'off');
 set(handles.xls_button, 'Enable', 'off');
-set(handles.filter_text, 'Enable', 'off');
-set(handles.filter_check, 'Enable', 'off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -307,6 +309,38 @@ columns = {
     ['SELECT sopinst, ', strjoin(columns(:,1), ', '), ' FROM patients ', ...
     'ORDER BY ', columns{get(handles.sort_menu, 'Value'), 1},' ASC']);
 
+% Apply filter, if present
+if ~isempty(handles.table.sopinst) && ...
+        get(handles.filter_check, 'Value') == 1 && ...
+        ~isempty(get(handles.filter_text, 'String'))
+    
+    % Initialize matches vector
+    m = zeros(length(handles.table.sopinst), 1);
+    
+    % Loop through columns
+    for i = 1:size(columns,1)
+        
+        % If column is text
+        if ischar(handles.table.(columns{i,1}){1})
+
+            % Apply filter to column
+            m = m + 1 - cellfun(@isempty, ...
+                regexpi(handles.table.(columns{i,1}), ...
+                get(handles.filter_text, 'String')));
+        end
+    end
+    
+    % Remove sopinstances that didn't match
+    handles.table.sopinst(m == 0) = [];
+    
+    % Loop through columns
+    for i = 1:size(columns,1)
+
+        % Remove rows that didn't match
+        handles.table.(columns{i,1})(m == 0) = [];
+    end
+end
+
 % Define table
 set(handles.uitable1, 'ColumnName', vertcat(columns(:,2), 'Files', 'Export'));
 set(handles.uitable1, 'ColumnEditable', logical(horzcat(zeros(1, ...
@@ -342,6 +376,9 @@ set(handles.uitable1, 'Data', horzcat(handles.table.id, handles.table.name, ...
     handles.table.fractions, handles.table.doseperfx, cell(...
     length(handles.table.id), 1)));
 
+% Clear temporary variables
+clear i m columns;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function sort_menu_Callback(hObject, ~, handles) %#ok<*DEFNU>
 % hObject    handle to sort_menu (see GCBO)
@@ -375,17 +412,35 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function filter_text_Callback(hObject, eventdata, handles)
+function filter_text_Callback(hObject, ~, handles)
 % hObject    handle to filter_text (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of filter_text as text
-%        str2double(get(hObject,'String')) returns contents of filter_text as a double
+% Check if filter is enabled
+if get(handles.filter_check, 'Value') == 1
 
+    % Revert to default text if empty
+    if isempty(get(hObject, 'String'))
+
+        % Log event
+        Event('Filter cleared');
+
+    else
+
+        % Log event
+        Event(['Filter changed to ', get(hObject,'String')]);
+    end
+
+    % Query table, using new sort
+    handles = updateTable(handles);
+
+    % Update handles structure
+    guidata(hObject, handles);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function filter_text_CreateFcn(hObject, eventdata, handles)
+function filter_text_CreateFcn(hObject, ~, ~)
 % hObject    handle to filter_text (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -397,9 +452,24 @@ if ispc && isequal(get(hObject,'BackgroundColor'), ...
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function filter_check_Callback(hObject, eventdata, handles)
+function filter_check_Callback(hObject, ~, handles)
 % hObject    handle to filter_check (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of filter_check
+% Revert to default text if empty
+if get(hObject, 'Value') == 1
+    
+    % Log event
+    Event('Filter enabled');
+else
+    
+    % Log event
+    Event('Filter disabled');
+end
+
+% Query table, using new sort
+handles = updateTable(handles);
+
+% Update handles structure
+guidata(hObject, handles);
