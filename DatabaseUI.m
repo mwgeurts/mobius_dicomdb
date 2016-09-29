@@ -22,7 +22,7 @@ function varargout = DatabaseUI(varargin)
 
 % Edit the above text to modify the response to help DatabaseUI
 
-% Last Modified by GUIDE v2.5 28-Sep-2016 12:38:12
+% Last Modified by GUIDE v2.5 28-Sep-2016 20:03:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -181,6 +181,9 @@ handles = updateTable(handles);
 set(handles.export_button, 'Enable', 'off');
 set(handles.delete_button, 'Enable', 'off');
 set(handles.xls_button, 'Enable', 'off');
+set(handles.sort_menu, 'Enable', 'off');
+set(handles.filter_text, 'Enable', 'off');
+set(handles.filter_check, 'Enable', 'off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -317,3 +320,56 @@ set(handles.uitable1, 'Data', horzcat(handles.table.id, handles.table.name, ...
     handles.table.type, handles.table.mode, handles.table.rxdose, ...
     handles.table.fractions, handles.table.doseperfx, cell(...
     length(handles.table.id), 1)));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function sort_menu_Callback(hObject, eventdata, handles)
+% hObject    handle to sort_menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns sort_menu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from sort_menu
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function sort_menu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sort_menu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Set background color
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function filter_text_Callback(hObject, eventdata, handles)
+% hObject    handle to filter_text (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of filter_text as text
+%        str2double(get(hObject,'String')) returns contents of filter_text as a double
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function filter_text_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to filter_text (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Set background color
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function filter_check_Callback(hObject, eventdata, handles)
+% hObject    handle to filter_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of filter_check
