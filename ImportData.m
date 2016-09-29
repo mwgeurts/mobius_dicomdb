@@ -146,8 +146,11 @@ for i = 1:l
             % Loop through RT plans
             for k = 1:length(json)
 
+                % Search for SOP again in table
+                [~, c, ~] = intersect(table.sopinst, json{k}.uid);
+
                 % If plan name matches DICOM file
-                if strcmp(json{k}.RTPlanName, d.RTPlanName);
+                if isempty(c) && strcmp(json{k}.RTPlanName, d.RTPlanName)
                     
                     % Log plan name
                     Event(['Patient plan ', json{k}.RTPlanName, ...
@@ -307,7 +310,7 @@ for i = 1:l
     for j = 1:length(dicom{1}.files)
         
         % If the file is a CT
-        if ~isempty(regexpi(dicom{1}.files{j}, '^CT'))
+        if ~isempty(regexpi(dicom{1}.files{j}, '/CT'))
 
             % Log event
             Event(['Loading CT image ', dicom{1}.files{j}]);
