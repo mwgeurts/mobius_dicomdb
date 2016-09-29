@@ -175,13 +175,20 @@ handles.database = LoadDatabase(handles.config.SQLITE3_DATABASE);
 Event('Querying database contents');
 
 % Update table
+set(handles.sort_menu, 'Value', 1);
 handles = updateTable(handles);
+
+% Set sort dropdown menu contents
+c = get(handles.uitable1, 'ColumnName');
+set(handles.sort_menu, 'String', c(1:end-2));
+
+% Clear temporary variables
+clear c;
 
 % Disable uncompleted components
 set(handles.export_button, 'Enable', 'off');
 set(handles.delete_button, 'Enable', 'off');
 set(handles.xls_button, 'Enable', 'off');
-set(handles.sort_menu, 'Enable', 'off');
 set(handles.filter_text, 'Enable', 'off');
 set(handles.filter_check, 'Enable', 'off');
 
@@ -278,16 +285,30 @@ delete(hObject);
 function handles = updateTable(handles)
 % updateTable updates the graphical user interface table
 
+% Define columns
+columns = {
+    'id', 'ID'
+    'name', 'Name'
+    'plan', 'Plan'
+    'plandate', 'Plan Date'
+    'position', 'Position'
+    'machine', 'Machine'
+    'tps', 'TPS'
+    'version', 'Version'
+    'type', 'Type'
+    'mode', 'Mode'
+    'rxdose', 'Dose'
+    'fractions', 'Fractions'
+    'doseperfx', 'Dose/Fx'
+};
+
 % Query the database for all patients
 [handles.database, handles.table] = QueryDatabase(handles.database, ...
-    ['SELECT sopinst, plan, plandate, machine, tps, version, type, mode, ', ...
-    'position, rxdose, fractions, id, name, doseperfx FROM patients ', ...
-    'ORDER BY id DESC']);
+    ['SELECT sopinst, ', strjoin(columns(:,1), ', '), ' FROM patients ', ...
+    'ORDER BY ', columns{get(handles.sort_menu, 'Value'), 1},' ASC']);
 
 % Define table
-set(handles.uitable1, 'ColumnName', {'ID', 'Name', 'Plan', 'Plan Date', ...
-    'Position', 'Machine', 'TPS', 'Version', 'Type', 'Mode', 'Dose', ...
-    'Fractions', 'Dose/Fx', 'Export'});
+set(handles.uitable1, 'ColumnName', vertcat(columns(:,2), 'Files', 'Export'));
 set(handles.uitable1, 'ColumnEditable', logical(horzcat(zeros(1, ...
     length(get(handles.uitable1, 'ColumnName'))-1), 1)));
 set(handles.uitable1, 'ColumnFormat', horzcat(cell(1, ...
@@ -322,17 +343,26 @@ set(handles.uitable1, 'Data', horzcat(handles.table.id, handles.table.name, ...
     length(handles.table.id), 1)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function sort_menu_Callback(hObject, eventdata, handles)
+function sort_menu_Callback(hObject, ~, handles) %#ok<*DEFNU>
 % hObject    handle to sort_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns sort_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from sort_menu
+% Log event
+c = cellstr(get(hObject,'String'));
+Event(['Sort changed to ', c{get(hObject,'Value')}]);
 
+% Query table, using new sort
+handles = updateTable(handles);
+
+% Update handles structure
+guidata(hObject, handles);
+
+% Clear temporary variables
+clear c;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function sort_menu_CreateFcn(hObject, eventdata, handles)
+function sort_menu_CreateFcn(hObject, ~, ~)
 % hObject    handle to sort_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
