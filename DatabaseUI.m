@@ -171,16 +171,19 @@ Event('Initializing database');
 % Execute LoadDatabase
 handles.database = LoadDatabase(handles.config.SQLITE3_DATABASE);
 
+% Rescan DICOM folder
+handles = ScanFiles(handles);
+
 % Log database load
 Event('Querying database contents');
 
 % Update table
 set(handles.sort_menu, 'Value', 1);
-handles = updateTable(handles);
+handles = UpdateTable(handles);
 
 % Set sort dropdown menu contents
 c = get(handles.uitable1, 'ColumnName');
-set(handles.sort_menu, 'String', c(1:end-2));
+set(handles.sort_menu, 'String', c(1:end-1));
 
 % Clear temporary variables
 clear c;
@@ -235,11 +238,14 @@ handles.session = EstablishConnection('server', input{1}, 'user', input{2}, ...
     'session', handles.session, 'database', handles.database, 'directory', ...
     handles.config.DICOM_FOLDER);
 
+% Rescan DICOM folder
+handles = ScanFiles(handles);
+
 % Log event
 Event('Updating graphical interface');
 
 % Update table
-handles = updateTable(handles);
+handles = UpdateTable(handles);
 
 % Clear temporary variables
 clear input;
@@ -284,102 +290,6 @@ close(handles.database);
 delete(hObject);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function handles = updateTable(handles)
-% updateTable updates the graphical user interface table
-
-% Define columns
-columns = {
-    'id', 'ID'
-    'name', 'Name'
-    'plan', 'Plan'
-    'plandate', 'Plan Date'
-    'position', 'Position'
-    'machine', 'Machine'
-    'tps', 'TPS'
-    'version', 'Version'
-    'type', 'Type'
-    'mode', 'Mode'
-    'rxdose', 'Dose'
-    'fractions', 'Fractions'
-    'doseperfx', 'Dose/Fx'
-};
-
-% Query the database for all patients
-[handles.database, handles.table] = QueryDatabase(handles.database, ...
-    ['SELECT sopinst, ', strjoin(columns(:,1), ', '), ' FROM patients ', ...
-    'ORDER BY ', columns{get(handles.sort_menu, 'Value'), 1},' ASC']);
-
-% Apply filter, if present
-if ~isempty(handles.table.sopinst) && ...
-        get(handles.filter_check, 'Value') == 1 && ...
-        ~isempty(get(handles.filter_text, 'String'))
-    
-    % Initialize matches vector
-    m = zeros(length(handles.table.sopinst), 1);
-    
-    % Loop through columns
-    for i = 1:size(columns,1)
-        
-        % If column is text
-        if ischar(handles.table.(columns{i,1}){1})
-
-            % Apply filter to column
-            m = m + 1 - cellfun(@isempty, ...
-                regexpi(handles.table.(columns{i,1}), ...
-                get(handles.filter_text, 'String')));
-        end
-    end
-    
-    % Remove sopinstances that didn't match
-    handles.table.sopinst(m == 0) = [];
-    
-    % Loop through columns
-    for i = 1:size(columns,1)
-
-        % Remove rows that didn't match
-        handles.table.(columns{i,1})(m == 0) = [];
-    end
-end
-
-% Define table
-set(handles.uitable1, 'ColumnName', vertcat(columns(:,2), 'Files', 'Export'));
-set(handles.uitable1, 'ColumnEditable', logical(horzcat(zeros(1, ...
-    length(get(handles.uitable1, 'ColumnName'))-1), 1)));
-set(handles.uitable1, 'ColumnFormat', horzcat(cell(1, ...
-    length(get(handles.uitable1, 'ColumnName'))-1), 'Logical'));
-
-% Format dates
-for i = 1:length(handles.table.plandate)
-    handles.table.plandate{i} = datestr(handles.table.plandate{i});
-end
-
-% Format doses/fractions
-for i = 1:length(handles.table.rxdose)
-    handles.table.fractions{i} = sprintf('%i', handles.table.fractions{i});
-    
-    if handles.table.rxdose{i} == 0
-        handles.table.rxdose{i} = '';
-        handles.table.doseperfx{i} = '';
-    else
-        handles.table.rxdose{i} = ...
-            sprintf('%0.1f Gy', handles.table.rxdose{i});
-        handles.table.doseperfx{i} = ...
-            sprintf('%0.1f Gy', handles.table.doseperfx{i});
-    end
-end
-
-% Update table contents
-set(handles.uitable1, 'Data', horzcat(handles.table.id, handles.table.name, ...
-    handles.table.plan, handles.table.plandate, handles.table.position, ...
-    handles.table.machine, handles.table.tps, handles.table.version, ...
-    handles.table.type, handles.table.mode, handles.table.rxdose, ...
-    handles.table.fractions, handles.table.doseperfx, cell(...
-    length(handles.table.id), 1)));
-
-% Clear temporary variables
-clear i m columns;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function sort_menu_Callback(hObject, ~, handles) %#ok<*DEFNU>
 % hObject    handle to sort_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -390,7 +300,7 @@ c = cellstr(get(hObject,'String'));
 Event(['Sort changed to ', c{get(hObject,'Value')}]);
 
 % Query table, using new sort
-handles = updateTable(handles);
+handles = UpdateTable(handles);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -433,7 +343,7 @@ if get(handles.filter_check, 'Value') == 1
     end
 
     % Query table, using new sort
-    handles = updateTable(handles);
+    handles = UpdateTable(handles);
 
     % Update handles structure
     guidata(hObject, handles);
@@ -469,7 +379,7 @@ else
 end
 
 % Query table, using new sort
-handles = updateTable(handles);
+handles = UpdateTable(handles);
 
 % Update handles structure
 guidata(hObject, handles);
