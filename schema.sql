@@ -15,7 +15,8 @@ mode varchar(32),
 rxdose float,
 fractions float,
 doseperfx float,
-position varchar(8)
+position varchar(8),
+numfiles float
 );
 
 .save database.db
