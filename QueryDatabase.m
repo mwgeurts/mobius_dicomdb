@@ -93,12 +93,6 @@ if strcmp(sql(1:6), 'SELECT')
     else
         Event(sprintf('0 record(s) returned in %0.3f seconds', toc));
     end
-else
-    
-    % Log conclusion
-    if exist('Event', 'file') == 2
-        Event(sprintf('Query completed in %0.3f seconds', toc));
-    end
 end
 
 % Close the query
