@@ -83,6 +83,11 @@ for i = 1:length(handles.table.rxdose)
     end
 end
 
+% Format number of files
+for i = 1:length(handles.table.numfiles)
+    handles.table.numfiles{i} = sprintf('%i', handles.table.numfiles{i});
+end
+
 % Generate display table
 t = cell(length(handles.table.sopinst), size(columns,1)+1);
 for i = 1:size(columns,1)

@@ -195,7 +195,6 @@ set(handles.filter_check, 'Value', 0);
 % Disable uncompleted components
 set(handles.export_button, 'Enable', 'off');
 set(handles.delete_button, 'Enable', 'off');
-set(handles.xls_button, 'Enable', 'off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -268,11 +267,54 @@ function delete_button_Callback(hObject, eventdata, handles)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function xls_button_Callback(hObject, eventdata, handles)
+function xls_button_Callback(~, ~, handles)
 % hObject    handle to xls_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('User selected Excel export');
+
+% Prompt user to select save file
+Event('Prompting user to select destination file');
+[file, path] = uiputfile('*.csv','Save Excel File');
+
+% If user specified a value
+if ~isempty(file) && ischar(file)
+    
+    % Log choice
+    Event(['User chose to save table to ', fullfile(path, file)]);
+    
+    % Initialize empty cell array
+    f = fieldnames(handles.table);
+    t = cell(length(handles.table.sopinst), length(f));
+    
+    % Loop through table columns
+    for i = 1:length(f)
+
+        % Store rows
+        t(:,i) = handles.table.(f{i});
+    end
+    
+    % Attempt to write to output file
+    try
+        writetable(cell2table(t, 'VariableNames', f), fullfile(path, file));
+        
+        % Log completion
+        Event(['Table successfully exported to ', fullfile(path, file)]);
+    
+    % Otherwise, log an error
+    catch
+        Event(['Error writing to file ', fullfile(path, file)], 'ERROR');
+    end
+    
+% Log cancel
+else
+    Event('User cancelled Excel export');
+end
+
+% Clear temporary variables
+clear f i t file path;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function figure1_CloseRequestFcn(hObject, ~, handles)
