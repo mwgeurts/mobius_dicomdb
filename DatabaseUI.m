@@ -194,7 +194,6 @@ set(handles.filter_check, 'Value', 0);
 
 % Disable uncompleted components
 set(handles.export_button, 'Enable', 'off');
-set(handles.delete_button, 'Enable', 'off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -260,11 +259,55 @@ function export_button_Callback(hObject, eventdata, handles)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function delete_button_Callback(hObject, eventdata, handles)
+function delete_button_Callback(hObject, ~, handles)
 % hObject    handle to delete_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('User selected to delete selected rows');
+
+% Retrieve the UI table contents
+t = get(handles.uitable1, 'Data');
+
+% Loop through the table rows
+for i = 1:length(handles.table.sopinst)
+    
+    % If the row is selected
+    if t{i,end} == 1
+        
+        % Log deletion
+        Event(['Deleting SOP instance ', handles.table.sopinst{i}]);
+        
+        % Remove entry from table
+        handles.dastabase = QueryDatabase(handles.database, ...
+            ['DELETE FROM patients WHERE sopinst = ''', ...
+            handles.table.sopinst{i}, '''']);
+        
+        % Try to remove the table
+        [s, m, ~] = rmdir(fullfile(handles.config.DICOM_FOLDER, ...
+            handles.table.sopinst{i}), 's');
+        
+        % Inform the user that the directory could not be deleted
+        if s == 0
+            Event(['The subdirectory ', fullfile(handles.config.DICOM_FOLDER, ...
+                handles.table.sopinst{i}), ' could not be deleted: ', ...
+                m], 'ERROR');
+        end
+    end
+end
+
+% Log event
+Event('Updating graphical interface');
+
+% Update table
+handles = UpdateTable(handles);
+
+% Clear temporary variables
+clear i m s t;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function xls_button_Callback(~, ~, handles)
