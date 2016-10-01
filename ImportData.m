@@ -346,6 +346,21 @@ for i = 1:l
             end
         end
     end
+    
+    % Try to delete the temporary files
+    Event('Deleting temporary files');
+    
+    % Get the current folder path
+    [p, ~, ~] = fileparts(dicom{1}.files{1}); 
+    
+    % Attempt to delete it
+    [s, ~, ~] = rmdir(p, 's');
+    
+    % Inform the user that the directory could not be deleted
+    if s == 0
+        Event(['The temporary directory ', p, ...
+            ' could not be deleted'], 'WARN');
+    end
 end
 
 % Log completion
@@ -356,8 +371,8 @@ Event(sprintf('Import completed in %0.3f seconds, adding %i plans', ...
 close(h);
 
 % Clear temporary variables
-clear i j k h l a b c f r s t x var session server database table directory ...
-    anonplan dicom json rtplans rtstructs;
+clear i j k h l a b c f r s t x p m var session server database table ...
+    directory anonplan dicom json rtplans rtstructs;
 
 % Return output variables
 if nargout == 1
