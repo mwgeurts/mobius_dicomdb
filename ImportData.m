@@ -99,6 +99,13 @@ for i = 1:l
                 session, 'sopinst', list{i}.rtplan{j}{3}{1}{1});
             json{length(json)+1} = LoadJSONPlan(r);
             
+            % Check if RTPlanName does not exist, and use Label instead
+            if ~isfield(json{length(json)}, 'RTPlanName') && ...
+                    isfield(json{length(json)}, 'RTPlanLabel')
+                json{length(json)}.RTPlanName = ...
+                    json{length(json)}.RTPlanLabel;
+            end
+            
             % Add original SOP instance UID
             json{length(json)}.uid = list{i}.rtplan{j}{3}{1}{1};
         else
@@ -143,6 +150,11 @@ for i = 1:l
             % Load DICOM file
             d = dicominfo(dicom{1}.files{j});
 
+            % Check if RTPlanName does not exist, and use Label instead
+            if ~isfield(d, 'RTPlanName') && isfield(d, 'RTPlanLabel')
+                d.RTPlanName = d.RTPlanLabel;
+            end
+            
             % Loop through RT plans
             for k = 1:length(json)
 
@@ -278,7 +290,11 @@ for i = 1:l
             Event(['Loading RTSTRUCT file ', dicom{1}.files{j}]);
 
             % Load DICOM file
-            d = dicominfo(dicom{1}.files{j});
+            try
+                d = dicominfo(dicom{1}.files{j});
+            catch
+                Event('Error loading DICOM file, skipping', 'WARN');
+            end
 
             % Loop through matched RT plans
             for k = 1:length(rtplans)
@@ -370,10 +386,6 @@ Event(sprintf('Import completed in %0.3f seconds, adding %i plans', ...
 % Close waitbar
 close(h);
 
-% Clear temporary variables
-clear i j k h l a b c f r s t x p m var session server database table ...
-    directory anonplan dicom json rtplans rtstructs;
-
 % Return output variables
 if nargout == 1
     varargout{1} = session;
@@ -381,3 +393,7 @@ elseif nargout == 2
     varargout{1} = session;
     varargout{2} = database;
 end
+
+% Clear temporary variables
+clear i j k h l a b c f r s t x p m var session server database table ...
+    directory anonplan dicom json rtplans rtstructs;
