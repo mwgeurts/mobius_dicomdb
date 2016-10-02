@@ -192,9 +192,6 @@ clear c;
 set(handles.filter_text, 'String', '');
 set(handles.filter_check, 'Value', 0);
 
-% Disable uncompleted components
-set(handles.export_button, 'Enable', 'off');
-
 % Update handles structure
 guidata(hObject, handles);
 
@@ -252,11 +249,65 @@ clear input;
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function export_button_Callback(hObject, eventdata, handles)
+function export_button_Callback(hObject, ~, handles)
 % hObject    handle to export_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('User selected to export selected rows');
+
+% Retrieve the UI table contents
+t = get(handles.uitable1, 'Data');
+
+% Prompt user to select a destination folder
+Event('Prompting user to select destination folder');
+path = uigetdir(handles.path, 'Select directory to export DICOM files to');
+
+% If user cancelled
+if path == 0
+    Event('User cancelled folder selection');
+    return;
+end
+
+% Initialize counter
+c = 0;
+
+% Loop through the table rows
+for i = 1:length(handles.table.sopinst)
+    
+    % If the row is selected
+    if t{i,end} == 1
+        
+        % Increment counter
+        c = c + 1;
+        
+        % Log deletion
+        Event(['Exporting SOP instance ', handles.table.sopinst{i}]);
+        
+        % Copy folder to destination
+        [s, m] = copyfile(fullfile(handles.config.DICOM_FOLDER, ...
+            handles.table.sopinst{i}), fullfile(path, ...
+            handles.table.sopinst{i}));
+        
+        % Inform the user that the directory could not be deleted
+        if s == 0
+            Event(['The DICOM folder ', ...
+                fullfile(handles.config.DICOM_FOLDER, ...
+                handles.table.sopinst{i}), ' could not be copied to ', ...
+                path,': ', m], 'ERROR');
+        end
+    end
+end
+
+% Log event
+Event(sprintf('Export completed, copying %i plans to %s', c, path));
+
+% Clear temporary variables
+clear c i m s t path;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function delete_button_Callback(hObject, ~, handles)
@@ -320,7 +371,7 @@ Event('User selected Excel export');
 
 % Prompt user to select save file
 Event('Prompting user to select destination file');
-[file, path] = uiputfile('*.csv','Save Excel File');
+[file, path] = uiputfile({'CSV File', '*.csv'}, 'Save Excel File');
 
 % If user specified a value
 if ~isempty(file) && ischar(file)
