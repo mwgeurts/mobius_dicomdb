@@ -1,26 +1,35 @@
 function varargout = DatabaseUI(varargin)
-% DATABASEUI MATLAB code for DatabaseUI.fig
-%      DATABASEUI, by itself, creates a new DATABASEUI or raises the existing
-%      singleton*.
+% DatabaseUI is the graphical interface for the Mobius3D anonymized DICOM 
+% Database tool. This MATLAB tool captures plan data from a Mobius3D server,
+% downloading an storing the anonymized DICOM data (CT, RTSTRUCT, RTPLAN, 
+% and RTDOSE) in a folder. The non-anonymized plan data is stored in a
+% SQLite3 table and is displayed in a graphical user interface. The
+% interface allows for plans to be searched, sorted, and exported research 
+% and academic purposes.
 %
-%      H = DATABASEUI returns the handle to a new DATABASEUI or the handle to
-%      the existing singleton*.
+% Mobius3D is a product of Mobius Medical Systems. See 
+% http://www.mobiusmed.com/mobius3d/ for more information.
 %
-%      DATABASEUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in DATABASEUI.M with the given input arguments.
+% This tool utilizes the Image Processing and Database MATLAB Toolboxes. To
+% run the graphical interface, execute DatabaseUI(). Alternatively, the
+% functions LoadDatabase(), ImportData(), and QueryDatabase() functions can
+% be used outside of the graphical interface.
+% 
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2016 University of Wisconsin Board of Regents
 %
-%      DATABASEUI('Property','Value',...) creates a new DATABASEUI or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before DatabaseUI_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to DatabaseUI_OpeningFcn via varargin.
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
 %
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help DatabaseUI
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
 % Last Modified by GUIDE v2.5 28-Sep-2016 20:03:22
 
@@ -42,7 +51,6 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DatabaseUI_OpeningFcn(hObject, ~, handles, varargin)
