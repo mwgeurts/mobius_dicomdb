@@ -326,7 +326,7 @@ for i = 1:l
     for j = 1:length(dicom{1}.files)
         
         % If the file is a CT
-        if ~isempty(regexpi(dicom{1}.files{j}, '/CT'))
+        if ~isempty(regexpi(dicom{1}.files{j}, '[/\\]CT'))
 
             % Log event
             Event(['Loading CT image ', dicom{1}.files{j}]);
@@ -396,4 +396,4 @@ end
 
 % Clear temporary variables
 clear i j k h l a b c f r s t x p m var session server database table ...
-    directory anonplan dicom json rtplans rtstructs;
+    directory anonplan dicom json rtplans rtstructs count;
